@@ -6,44 +6,48 @@
 [![Commit activity](https://img.shields.io/github/commit-activity/m/AdamGagorik/jinja2-mermaid-extension)](https://img.shields.io/github/commit-activity/m/AdamGagorik/jinja2-mermaid-extension)
 [![License](https://img.shields.io/github/license/AdamGagorik/jinja2-mermaid-extension)](https://img.shields.io/github/license/AdamGagorik/jinja2-mermaid-extension)
 
-A jinja2 block to render a mermaid diagram
+A jinja2 block to render a mermaid diagram.
 
 - **Github repository**: <https://github.com/AdamGagorik/jinja2-mermaid-extension/>
 - **Documentation** <https://AdamGagorik.github.io/jinja2-mermaid-extension/>
 
-## Getting started with your project
+## Setup
 
-First, create a repository on GitHub with the same name as this project, and then run the following commands:
-
-```bash
-git init -b main
-git add .
-git commit -m "init commit"
-git remote add origin git@github.com:AdamGagorik/jinja2-mermaid-extension.git
-git push -u origin main
-```
-
-Finally, install the environment and the pre-commit hooks with
+- `Docker` must be installed to run the `mermaid` command line tool.
+- The extension should be installed in your `Python` environment.
 
 ```bash
-make install
+pip install jinja2-mermaid-extension
 ```
 
-You are now ready to start development on your project!
-The CI/CD pipeline will be triggered when you open a pull request, merge to main, or when you create a new release.
+- The extension should be added to the `jinja2` environment.
 
-To finalize the set-up for publishing to PyPi or Artifactory, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/publishing/#set-up-for-pypi).
-For activating the automatic documentation with MkDocs, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/mkdocs/#enabling-the-documentation-on-github).
-To enable the code coverage reports, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/codecov/).
+```python
+from jinja2 import Environment
+from jinja2_mermaid_extension import MermaidExtension
 
-## Releasing a new version
+env = Environment(extensions=[MermaidExtension])
+```
 
-- Create an API Token on [Pypi](https://pypi.org/).
-- Add the API Token to your projects secrets with the name `PYPI_TOKEN` by visiting [this page](https://github.com/AdamGagorik/jinja2-mermaid-extension/settings/secrets/actions/new).
-- Create a [new release](https://github.com/AdamGagorik/jinja2-mermaid-extension/releases/new) on Github.
-- Create a new tag in the form `*.*.*`.
+## Usage
 
-For more details, see [here](https://fpgmaas.github.io/cookiecutter-poetry/features/cicd/#how-to-trigger-a-release).
+The following `jinaj2` block will be transformed into an image and referenced in the rendered string.
+
+```jinja2
+{% mermaid -%}
+theme: default
+scale: 3
+width: 75
+align: center
+caption: |
+    An example mermaid diagram!
+diagram: |
+    graph TD
+        A --> B
+        B --> C
+        A --> C
+{% endmermaid %}
+```
 
 ---
 
