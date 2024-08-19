@@ -1,0 +1,54 @@
+site_name: jinja2-mermaid-extension
+repo_url: https://github.com/AdamGagorik/jinja2-mermaid-extension
+site_url: https://AdamGagorik.github.io/jinja2-mermaid-extension
+site_description: A jinja2 block to render a mermaid diagram
+site_author: Adam Gagorik
+edit_uri: edit/main/docs/
+repo_name: AdamGagorik/jinja2-mermaid-extension
+copyright: Maintained by <a href="https://AdamGagorik.com">Florian</a>.
+
+nav:
+  - Home: index.md
+  - Modules: modules.md
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+            setup_commands:
+                - import sys
+                - sys.path.append('../')
+theme:
+  name: material
+  feature:
+    tabs: true
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/AdamGagorik/jinja2-mermaid-extension
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/jinja2-mermaid-extension
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
