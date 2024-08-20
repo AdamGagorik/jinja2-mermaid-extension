@@ -1,6 +1,6 @@
 import shutil
+import subprocess
 from pathlib import Path
-from subprocess import run
 from tempfile import TemporaryDirectory
 
 
@@ -11,21 +11,48 @@ def mermaid(
     scale: int = 3,
     width: int = 800,
     height: int | None = None,
-    background_color: str = "white",
+    background: str = "white",
+    temp_dir: Path | None = None,
+    delete_temp_dir: bool = True,
+    mermaid_docker_image: str = "minlag/mermaid-cli",
+    mermaid_volume_mount: str = "/data",
 ) -> None:
     """
     Generate a mermaid diagram from a mermaid code block or input file.
+
+    Parameters:
+        inp: A raw mermaid code block or a path to a file containing mermaid code.
+        out: The path to the output file.
+        theme: The theme to use for the diagram.
+        scale: A scaling factor for the diagram.
+        width: The width of the diagram in pixels.
+        height: The height of the diagram in pixels.
+        background: The background color of the generated diagram.
+        temp_dir: A temporary directory to use for intermediate files.
+        delete_temp_dir: Whether to delete the temporary directory after execution.
+        mermaid_docker_image: The docker image containing the mermaid-cli tool.
+        mermaid_volume_mount: The directory in the docker container to mount the temporary directory to.
     """
-    with TemporaryDirectory() as tmp_root:
+    with temp_dir or TemporaryDirectory(
+        dir=None if temp_dir is None else str(temp_dir), delete=delete_temp_dir
+    ) as tmp_root:
+        tmp_root = Path(str(tmp_root))
+
         if isinstance(inp, str):
-            tmp_inp = Path(tmp_root) / out.with_suffix(".mmd").name
+            tmp_inp = tmp_root / out.with_suffix(".mmd").name
             with tmp_inp.open("w") as stream:
                 stream.write(inp)
         else:
-            tmp_inp = Path(tmp_root) / inp.name
+            tmp_inp = tmp_root / inp.name
             shutil.copy(inp, tmp_inp)
 
-        tmp_out = Path(tmp_root) / out.name
+        if not out.parent.exists():
+            raise FileNotFoundError(f"output directory does not exist!: {out.parent}")
+
+        if out.is_dir():
+            raise IsADirectoryError(out)
+
+        tmp_out = tmp_root / out.name
         if tmp_out.exists():
             raise FileExistsError(tmp_out)
 
@@ -44,12 +71,12 @@ def mermaid(
             "run",
             "--rm",
             "-v",
-            f"{tmp_root}:/data",
-            "minlag/mermaid-cli",
+            f"{tmp_root}:{mermaid_volume_mount}",
+            mermaid_docker_image,
             "-t",
             theme,
             "-b",
-            background_color,
+            background,
             "-s",
             str(scale),
             "-w",
@@ -61,10 +88,12 @@ def mermaid(
             tmp_out.name,
         ]
 
-        if run(command).returncode == 0:
-            if not tmp_out.exists():
-                raise FileNotFoundError(tmp_out)
+        try:
+            subprocess.check_call(command)
+        except subprocess.CalledProcessError:
+            raise RuntimeError("Failed to execute mermaid command") from None
 
-            shutil.copy(tmp_out, out)
-        else:
-            raise RuntimeError("Failed to execute mermaid command")
+        if not tmp_out.exists():
+            raise FileNotFoundError(tmp_out)
+
+        shutil.copy(tmp_out, out)
