@@ -49,6 +49,26 @@ diagram: |
 {% endmermaid %}
 ```
 
+The following arguments are available:
+
+| Argument                 | Description                                                                | Default                |
+| ------------------------ | -------------------------------------------------------------------------- | ---------------------- |
+| **diagram**              | The diagram to render.                                                     | `None`                 |
+| **ext**                  | The file extension of the generated diagram.                               | `".png"`               |
+| **theme**                | The theme to use for the diagram.                                          | `"default"`            |
+| **scale**                | A scaling factor for the diagram.                                          | `3`                    |
+| **width**                | The width of the diagram in pixels.                                        | `800 `                 |
+| **height**               | The height of the diagram in pixels.                                       | `None`                 |
+| **background**           | The background color of the generated diagram.                             | `"white"`              |
+| **align**                | The alignment of the diagram in the rendered string.                       | `"center"`             |
+| **caption**              | A caption to add to the diagram.                                           | `None`                 |
+| **use_cached**           | Whether to use a cached version of the diagram.                            | `True`                 |
+| **use_myst_syntax**      | Whether to use the `myst` syntax for the diagram.                          | `True`                 |
+| **temp_dir**             | A temporary directory to use for intermediate files.                       | `None`                 |
+| **delete_temp_dir**      | Whether to delete the temporary directory after execution.                 | `True`                 |
+| **mermaid_docker_image** | The docker image containing the mermaid-cli tool.                          | `"minlag/mermaid-cli"` |
+| **mermaid_volume_mount** | The directory in the docker container to mount the temporary directory to. | `"/data"`              |
+
 ---
 
 Repository initiated with [fpgmaas/cookiecutter-poetry](https://github.com/fpgmaas/cookiecutter-poetry).
