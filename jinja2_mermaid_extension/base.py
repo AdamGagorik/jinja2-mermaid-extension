@@ -81,6 +81,7 @@ class GenImageExtension(Extension):
         context: Context,
         inp: Path | str,
         ext: str = ".png",
+        name: str | None = None,
         mode: str | Mode = Mode.OUT,
         align: str = "center",
         caption: str | None = None,
@@ -95,8 +96,10 @@ class GenImageExtension(Extension):
             mode = LOOKUP_MODE[mode.strip().lower()]
 
         root = self._get_output_root(context)
-        key = str(uuid5(namespace, str(inp) + output_name_salt))
-        out = root.joinpath(key).with_suffix("." + ext.lower().lstrip("."))
+        if name is None:
+            name = str(uuid5(namespace, str(inp) + output_name_salt))
+
+        out = root.joinpath(name).with_suffix("." + ext.lower().lstrip("."))
 
         if not out.exists() or not use_cached:
             self.callback(inp=inp, out=out, **kwargs)
@@ -122,7 +125,13 @@ class GenImageExtension(Extension):
 
     @classmethod
     def _get_output_root(cls, context: Context) -> Path:
-        return Path.cwd() if cls.output_root_key is None else cast(Path, context.parent.get(cls.output_root_key))
+        if cls._get_output_root is None:
+            return Path.cwd()
+
+        if (root := context.parent.get(str(cls.output_root_key))) is None:
+            return Path.cwd()
+
+        return Path(cast(Path, root))
 
     @staticmethod
     def _render_myst(out: Path, align: str, caption: str | None, kwargs: dict[str, Any]) -> Generator[str, None, None]:
