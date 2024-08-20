@@ -11,6 +11,7 @@ from jinja2_mermaid_extension.callback import mermaid
 
 class MermaidExtension(GenImageExtension):
     tags: set[str] = {"mermaid"}  # noqa: RUF012
+    output_root_key: str | None = "mermaid_output_root"
 
     def __init__(self, environment: Environment):
         super().__init__(environment)

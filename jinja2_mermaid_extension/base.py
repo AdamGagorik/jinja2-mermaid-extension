@@ -1,3 +1,4 @@
+import enum
 import inspect
 import json
 import logging
@@ -17,8 +18,31 @@ logger = logging.getLogger(__name__)
 namespace = UUID("b5db653c-cc06-466c-9b39-775db782a06f")
 
 
+class Mode(enum.Enum):
+    MD: str = "md"
+    OUT: str = "out"
+    RST: str = "rst"
+    MYST: str = "myst"
+
+
+LOOKUP_MODE = {
+    "md": Mode.MD,
+    "markdown": Mode.MD,
+    "out": Mode.OUT,
+    "output": Mode.OUT,
+    "output_only": Mode.OUT,
+    "output_path": Mode.OUT,
+    "rst": Mode.RST,
+    "restructuredtext": Mode.RST,
+    "myst": Mode.MYST,
+    "myst_parser": Mode.MYST,
+    "myst_markdown": Mode.MYST,
+}
+
+
 class GenImageExtension(Extension):
     tags: set[str] = {"yaml"}  # noqa: RUF012
+    output_root_key: str | None = None
 
     def __init__(self, environment: Environment):
         super().__init__(environment)
@@ -57,17 +81,20 @@ class GenImageExtension(Extension):
         context: Context,
         inp: Path | str,
         ext: str = ".png",
+        mode: str | Mode = Mode.OUT,
         align: str = "center",
         caption: str | None = None,
         use_cached: bool = True,
-        use_myst_syntax: bool = True,
         output_name_salt: str = "...",
         **kwargs: Any,
     ) -> Generator[str, None, None]:
         """
         Run callback and yield a series of markdown commands to include it .
         """
-        root = cast(Path, context.parent.get("out_path")).parent
+        if isinstance(mode, str):
+            mode = LOOKUP_MODE[mode.strip().lower()]
+
+        root = self._get_output_root(context)
         key = str(uuid5(namespace, str(inp) + output_name_salt))
         out = root.joinpath(key).with_suffix("." + ext.lower().lstrip("."))
 
@@ -76,22 +103,39 @@ class GenImageExtension(Extension):
         else:
             logger.warning("existing: %s", out)
 
-        if use_myst_syntax:
-            if caption is not None:
-                yield f":::{{figure}} {out.name}"
-            else:
-                yield f":::{{image}} {out.name}"
-            if kwargs.get("width", None) is not None:
-                yield f":width: {kwargs['width']}px"
-            if kwargs.get("height", None) is not None:
-                yield f":height: {kwargs['height']}px"
-            if align is not None:
-                yield f":align: {align}"
-            if caption is not None:
-                yield f":\n{caption}"
-            yield r":::"
-        else:
+        if mode == Mode.OUT:
+            yield str(out)
+        elif mode == Mode.MD:
             if caption is not None:
                 yield f"![{caption}]({out.name})"
             else:
                 yield f"![{out.name}]"
+        elif mode == Mode.RST:
+            if caption is not None:
+                yield f".. image:: {out.name}\n   :alt: {caption}"
+            else:
+                yield f".. image:: {out.name}"
+        elif mode == Mode.MYST:
+            yield from self._render_myst(out, align, caption, kwargs)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+
+    @classmethod
+    def _get_output_root(cls, context: Context) -> Path:
+        return Path.cwd() if cls.output_root_key is None else cast(Path, context.parent.get(cls.output_root_key))
+
+    @staticmethod
+    def _render_myst(out: Path, align: str, caption: str | None, kwargs: dict[str, Any]) -> Generator[str, None, None]:
+        if caption is not None:
+            yield f":::{{figure}} {out.name}"
+        else:
+            yield f":::{{image}} {out.name}"
+        if kwargs.get("width") is not None:
+            yield f":width: {kwargs['width']}px"
+        if kwargs.get("height") is not None:
+            yield f":height: {kwargs['height']}px"
+        if align is not None:
+            yield f":align: {align}"
+        if caption is not None:
+            yield f":\n{caption}"
+        yield r":::"
