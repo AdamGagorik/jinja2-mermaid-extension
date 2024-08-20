@@ -5,13 +5,14 @@ site_description: A jinja2 block to render a mermaid diagram
 site_author: Adam Gagorik
 edit_uri: edit/main/docs/
 repo_name: AdamGagorik/jinja2-mermaid-extension
-copyright: Maintained by <a href="https://AdamGagorik.com">Florian</a>.
+copyright: Maintained by <a href="https://AdamGagorik.com">Adam</a>.
 
 nav:
   - Home: index.md
   - Modules: modules.md
 plugins:
   - search
+  - include-markdown
   - mkdocstrings:
       handlers:
         python:

@@ -1,5 +1,3 @@
-from urllib3.contrib.pyopenssl import orig_util_SSLContext
-
 # jinja2-mermaid-extension
 
 [![Release](https://img.shields.io/github/v/release/AdamGagorik/jinja2-mermaid-extension)](https://img.shields.io/github/v/release/AdamGagorik/jinja2-mermaid-extension)
@@ -11,15 +9,8 @@ from urllib3.contrib.pyopenssl import orig_util_SSLContext
 A jinja2 block to render a mermaid diagram.
 
 1. The diagram is rendered using the `mermaid-cli` tool in a `Docker` container.
-2. The diagram is saved to the current directory or a context variable called `mermaid_output_root` (if defined).
-3. The block is then replaced with one of the following strings:
-   - The path to the generated image.
-   - A markdown image link.
-   - A restructured text image link.
-   - A MyST formatted markdown image link.
-
-- **Github repository**: <https://github.com/AdamGagorik/jinja2-mermaid-extension/>
-- **Documentation** <https://AdamGagorik.github.io/jinja2-mermaid-extension/>
+2. The diagram is saved to the current directory or `mermaid_output_root` (if defined).
+3. The block is then replaced with a configurable string (markdown, etc).
 
 ## Setup
 
@@ -50,7 +41,7 @@ out_path.write_text(rendered)
 
 ## Usage
 
-The following `jinaj2` block will be transformed into an image and referenced in the rendered string.
+The following `jinaj2` block will render a mermaid diagram.
 
 ```jinja2
 {% mermaid -%}
@@ -90,7 +81,7 @@ The following arguments are available:
 | **mermaid_docker_image** | The docker image containing the mermaid-cli tool.                          | `"minlag/mermaid-cli"` |
 | **mermaid_volume_mount** | The directory in the docker container to mount the temporary directory to. | `"/data"`              |
 
-The mode determines the replacement string.
+The block will be replaced by a string based on the `mode` argument.
 
 - `"path"`: Output the path to the generated image.
 - `"markdown"`: Output a simple markdown image link.
@@ -99,4 +90,5 @@ The mode determines the replacement string.
 
 ---
 
-Repository initiated with [fpgmaas/cookiecutter-poetry](https://github.com/fpgmaas/cookiecutter-poetry).
+- **Github repository**: <https://github.com/AdamGagorik/jinja2-mermaid-extension/>
+- **Documentation** <https://AdamGagorik.github.io/jinja2-mermaid-extension/>

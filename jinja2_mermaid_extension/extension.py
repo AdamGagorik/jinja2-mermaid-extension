@@ -1,3 +1,7 @@
+"""
+## This module defines a jinja2 extension for generating mermaid diagrams.
+"""
+
 import inspect
 from collections.abc import Generator
 from pathlib import Path
@@ -10,6 +14,10 @@ from jinja2_mermaid_extension.callback import mermaid
 
 
 class MermaidExtension(GenImageExtension):
+    """
+    A Jinja2 extension for generating mermaid diagrams.
+    """
+
     tags: set[str] = {"mermaid"}  # noqa: RUF012
     output_root_key: str | None = "mermaid_output_root"
 
@@ -22,6 +30,9 @@ class MermaidExtension(GenImageExtension):
 
     @staticmethod
     def modify(**kwargs: Any) -> Generator[tuple[str, Any], None, None]:
+        """
+        Intercept and modify the keyword arguments before passing them to the callback function.
+        """
         for key, value in kwargs.items():
             if key == "diagram":
                 if "inp" in kwargs:
@@ -36,6 +47,9 @@ class MermaidExtension(GenImageExtension):
         out: Path,
         **kwargs: Any,
     ) -> None:
+        """
+        The function to call to generate an image.
+        """
         if isinstance(inp, str) and inp.endswith(".mmd"):
             inp = Path(inp)
 

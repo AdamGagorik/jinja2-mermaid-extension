@@ -1,3 +1,7 @@
+"""
+## This module defines a base class for jinja2 extensions that generate images.
+"""
+
 import enum
 import inspect
 import json
@@ -48,6 +52,9 @@ class GenImageExtension(Extension):
         super().__init__(environment)
 
     def parse(self, parser: Parser) -> nodes.Node:
+        """
+        The logic to parse the jinja2 block as yaml.
+        """
         line = next(parser.stream).lineno
         block = parser.parse_statements((f"name:end{next(iter(self.tags))}",), drop_needle=True)
         kwargs = yaml.safe_load(cast(nodes.TemplateData, cast(nodes.Output, block[0]).nodes[0]).data)
@@ -56,9 +63,15 @@ class GenImageExtension(Extension):
 
     @staticmethod
     def modify(**kwargs: Any) -> Generator[tuple[str, Any], None, None]:
+        """
+        Intercept and modify the keyword arguments before passing them to the callback function.
+        """
         yield from kwargs.items()
 
     def callback(self, inp: Path | str, out: Path, **kwargs: Any) -> None:
+        """
+        The function to call to generate an image.
+        """
         raise NotImplementedError
 
     @property

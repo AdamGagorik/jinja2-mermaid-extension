@@ -1,3 +1,7 @@
+"""
+## This module defines a callback function for generating mermaid diagrams.
+"""
+
 import shutil
 import subprocess
 from pathlib import Path
