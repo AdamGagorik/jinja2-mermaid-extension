@@ -1,3 +1,5 @@
+from urllib3.contrib.pyopenssl import orig_util_SSLContext
+
 # jinja2-mermaid-extension
 
 [![Release](https://img.shields.io/github/v/release/AdamGagorik/jinja2-mermaid-extension)](https://img.shields.io/github/v/release/AdamGagorik/jinja2-mermaid-extension)
@@ -35,6 +37,15 @@ from jinja2 import Environment
 from jinja2_mermaid_extension import MermaidExtension
 
 env = Environment(extensions=[MermaidExtension])
+```
+
+- You should pass the `mermaid_output_root` to the render method.
+
+```python
+out_path = Path().cwd() / "example.md"
+template = env.get_template("example.md.jinja2")
+rendered = template.render(mermaid_output_root=out_path.parent)
+out_path.write_text(rendered)
 ```
 
 ## Usage
