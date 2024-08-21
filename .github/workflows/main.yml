@@ -44,13 +44,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run tests
-        run: poetry run pytest tests --cov --cov-config=pyproject.toml --cov-report=xml
+        run: poetry run pytest tests --cov --cov-config=pyproject.toml --cov-report=xml --junitxml=junit.xml
 
       - name: Check typing
         run: poetry run mypy
 
-      - name: Upload coverage reports to Codecov with GitHub Action on Python 3.12
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+        if: ${{ matrix.python-version == '3.12' }}
+
+      - name: Upload test results reports to Codecov
+        uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
         if: ${{ matrix.python-version == '3.12' }}
