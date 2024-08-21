@@ -99,6 +99,8 @@ class GenImageExtension(Extension):
         mode: str | Mode = Mode.OUT,
         align: str = "center",
         caption: str | None = None,
+        just_name: bool = False,
+        relative_to: str | Path | None = None,
         use_cached: bool = True,
         output_name_salt: str = "...",
         **kwargs: Any,
@@ -120,20 +122,16 @@ class GenImageExtension(Extension):
         else:
             logger.warning("existing: %s", out)
 
+        stem = out.name if just_name else str(out) if relative_to is None else str(out.relative_to(Path(relative_to)))
+
         if mode == Mode.OUT:
-            yield str(out)
+            yield stem
         elif mode == Mode.MD:
-            if caption is not None:
-                yield f"![{caption}]({out.name})"
-            else:
-                yield f"![{out.name}]"
+            yield from self._render_md(out, stem, caption)
         elif mode == Mode.RST:
-            if caption is not None:
-                yield f".. image:: {out.name}\n   :alt: {caption}"
-            else:
-                yield f".. image:: {out.name}"
+            yield from self._render_rst(stem, caption)
         elif mode == Mode.MYST:
-            yield from self._render_myst(out, align, caption, kwargs)
+            yield from self._render_myst(stem, align, caption, kwargs)
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
@@ -148,11 +146,25 @@ class GenImageExtension(Extension):
         return Path(cast(Path, root))
 
     @staticmethod
-    def _render_myst(out: Path, align: str, caption: str | None, kwargs: dict[str, Any]) -> Generator[str, None, None]:
+    def _render_md(out: Path, stem: str, caption: str | None) -> Generator[str, None, None]:
         if caption is not None:
-            yield f":::{{figure}} {out.name}"
+            yield f"![{caption}]({stem})"
         else:
-            yield f":::{{image}} {out.name}"
+            yield f"![{out.name}]({stem})"
+
+    @staticmethod
+    def _render_rst(stem: str, caption: str | None) -> Generator[str, None, None]:
+        if caption is not None:
+            yield f".. image:: {stem}\n   :alt: {caption.rstrip()}"
+        else:
+            yield f".. image:: {stem}"
+
+    @staticmethod
+    def _render_myst(stem: str, align: str, caption: str | None, kwargs: dict[str, Any]) -> Generator[str, None, None]:
+        if caption is not None:
+            yield f":::{{figure}} {stem}"
+        else:
+            yield f":::{{image}} {stem}"
         if kwargs.get("width") is not None:
             yield f":width: {kwargs['width']}px"
         if kwargs.get("height") is not None:
@@ -160,5 +172,5 @@ class GenImageExtension(Extension):
         if align is not None:
             yield f":align: {align}"
         if caption is not None:
-            yield f":\n{caption}"
+            yield f"\n{caption.rstrip()}"
         yield r":::"
