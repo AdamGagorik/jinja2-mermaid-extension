@@ -33,6 +33,7 @@ LOOKUP_MODE = {
     "md": Mode.MD,
     "markdown": Mode.MD,
     "out": Mode.OUT,
+    "path": Mode.OUT,
     "output": Mode.OUT,
     "output_only": Mode.OUT,
     "output_path": Mode.OUT,
