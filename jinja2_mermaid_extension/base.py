@@ -47,6 +47,7 @@ LOOKUP_MODE = {
 
 class GenImageExtension(Extension):
     tags: set[str] = {"yaml"}  # noqa: RUF012
+    input_root_key: str | None = None
     output_root_key: str | None = None
 
     def __init__(self, environment: Environment):
@@ -69,7 +70,7 @@ class GenImageExtension(Extension):
         """
         yield from kwargs.items()
 
-    def callback(self, inp: Path | str, out: Path, **kwargs: Any) -> None:
+    def callback(self, inp: Path | str, out: Path, inp_root: Path, out_root: Path, **kwargs: Any) -> None:
         """
         The function to call to generate an image.
         """
@@ -111,14 +112,20 @@ class GenImageExtension(Extension):
         if isinstance(mode, str):
             mode = LOOKUP_MODE[mode.strip().lower()]
 
-        root = self._get_output_root(context)
+        out_root = self._get_output_root(context)
         if name is None:
             name = str(uuid5(namespace, str(inp) + output_name_salt))
 
-        out = root.joinpath(name).with_suffix("." + ext.lower().lstrip("."))
+        out = out_root.joinpath(name).with_suffix("." + ext.lower().lstrip("."))
 
         if not out.exists() or not use_cached:
-            self.callback(inp=inp, out=out, **kwargs)
+            self.callback(
+                inp=inp,
+                out=out,
+                inp_root=self._get_input_root(context),
+                out_root=self._get_output_root(context),
+                **kwargs,
+            )
         else:
             logger.warning("existing: %s", out)
 
@@ -136,8 +143,18 @@ class GenImageExtension(Extension):
             raise ValueError(f"Unknown mode: {mode}")
 
     @classmethod
+    def _get_input_root(cls, context: Context) -> Path:
+        if cls.input_root_key is None:
+            return Path.cwd()
+
+        if (root := context.parent.get(str(cls.input_root_key))) is None:
+            return Path.cwd()
+
+        return Path(cast(Path, root))
+
+    @classmethod
     def _get_output_root(cls, context: Context) -> Path:
-        if cls._get_output_root is None:
+        if cls.output_root_key is None:
             return Path.cwd()
 
         if (root := context.parent.get(str(cls.output_root_key))) is None:

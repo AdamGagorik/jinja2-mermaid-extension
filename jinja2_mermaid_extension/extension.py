@@ -19,6 +19,7 @@ class MermaidExtension(GenImageExtension):
     """
 
     tags: set[str] = {"mermaid"}  # noqa: RUF012
+    input_root_key: str | None = "mermaid_input_root"
     output_root_key: str | None = "mermaid_output_root"
 
     def __init__(self, environment: Environment):
@@ -45,6 +46,8 @@ class MermaidExtension(GenImageExtension):
         self,
         inp: Path | str,
         out: Path,
+        inp_root: Path,
+        out_root: Path,
         **kwargs: Any,
     ) -> None:
         """
@@ -52,5 +55,7 @@ class MermaidExtension(GenImageExtension):
         """
         if isinstance(inp, str) and inp.endswith(".mmd"):
             inp = Path(inp)
+            if not inp.is_absolute():
+                inp = inp_root / inp
 
         return mermaid(inp=inp, out=out, **kwargs)
