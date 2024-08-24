@@ -6,11 +6,12 @@ from jinja2 import Environment, StrictUndefined
 
 import tests.resources
 from jinja2_mermaid_extension import MermaidExtension
+from jinja2_mermaid_extension.base import runner
 
 
 @pytest.fixture()
 def run_root(tmp_path: Path) -> Path:
-    yield Path(r"/Users/adam/workspace/clones/jinja2-mermaid-extension/temp")
+    return tmp_path
 
 
 @pytest.fixture()
@@ -42,5 +43,6 @@ def test_project(resource_root: Path, template_name: str, expected_name: str, ru
         mermaid_output_root=run_root,
     )
 
-    assert len(list(run_root.iterdir())) == 1
+    runner().wait()
     assert rendered == expected
+    assert len(list(run_root.iterdir())) == 1

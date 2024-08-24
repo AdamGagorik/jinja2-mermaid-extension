@@ -3,12 +3,15 @@
 """
 
 import enum
+import functools
 import inspect
 import json
 import logging
-from collections.abc import Generator
+from collections.abc import Generator, Hashable
+from concurrent.futures import Executor, Future, ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Callable, cast
 from uuid import UUID, uuid5
 
 import yaml
@@ -43,6 +46,46 @@ LOOKUP_MODE = {
     "myst_parser": Mode.MYST,
     "myst_markdown": Mode.MYST,
 }
+
+
+@dataclass
+class Runner:
+    running: set[Hashable] = field(default_factory=set)
+    futures: dict[Future, Hashable] = field(default_factory=dict)
+
+    def run(self, key: Hashable, fn: Callable, *args: Any, **kwargs: Any) -> None:
+        if key in self.futures or key in self.running:
+            raise KeyError(key)
+
+        future = self.executor().submit(fn, *args, **kwargs)
+        self.futures[future] = key
+        self.running.add(key)
+
+    def wait(self) -> None:
+        for future in as_completed(self.futures.keys()):
+            key = self.futures[future]
+            self.running.remove(key)
+            self.futures.pop(future)
+            future.result()
+
+        if self.futures:
+            raise RuntimeError("Not all futures completed")
+
+        if self.running:
+            self.running.clear()
+
+    @classmethod
+    @functools.lru_cache(maxsize=1)
+    def executor(cls) -> Executor:
+        return ThreadPoolExecutor(max_workers=None)
+
+    def __contains__(self, key: Hashable) -> bool:
+        return key in self.running
+
+
+@functools.lru_cache(maxsize=1)
+def runner() -> Runner:
+    return Runner()
 
 
 class GenImageExtension(Extension):
@@ -103,6 +146,7 @@ class GenImageExtension(Extension):
         just_name: bool = False,
         relative_to: str | Path | None = None,
         use_cached: bool = True,
+        parallel: bool = True,
         output_name_salt: str = "...",
         **kwargs: Any,
     ) -> Generator[str, None, None]:
@@ -119,15 +163,32 @@ class GenImageExtension(Extension):
         out = out_root.joinpath(name).with_suffix("." + ext.lower().lstrip("."))
 
         if not out.exists() or not use_cached:
-            self.callback(
-                inp=inp,
-                out=out,
-                inp_root=self._get_input_root(context),
-                out_root=self._get_output_root(context),
-                **kwargs,
-            )
+            if out in runner():
+                logger.warning("ignore: %s", out)
+            else:
+                if parallel:
+                    logger.warning("submit: %s", out)
+                    runner().run(
+                        key=out,
+                        fn=self.callback,
+                        inp=inp,
+                        out=out,
+                        inp_root=self._get_input_root(context),
+                        out_root=out_root,
+                        **kwargs,
+                    )
+                else:
+                    logger.warning("create: %s", out)
+                    self.callback(
+                        inp=inp,
+                        out=out,
+                        inp_root=self._get_input_root(context),
+                        out_root=self._get_output_root(context),
+                        **kwargs,
+                    )
+                    runner().running.add(out)
         else:
-            logger.warning("existing: %s", out)
+            logger.warning("cached: %s", out)
 
         stem = out.name if just_name else str(out) if relative_to is None else str(out.relative_to(Path(relative_to)))
 
