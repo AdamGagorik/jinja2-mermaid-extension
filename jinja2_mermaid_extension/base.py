@@ -7,7 +7,6 @@ import functools
 import inspect
 import json
 import logging
-import os
 from collections.abc import Generator, Hashable
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -195,8 +194,6 @@ class GenImageExtension(Extension):
             stem = out.name
         elif not full_path:
             stem = str(out.relative_to(Path(out_root)))
-            if not stem.startswith("."):
-                stem = f".{os.sep}{stem}"
         else:
             stem = str(out)
 
@@ -253,9 +250,9 @@ class GenImageExtension(Extension):
         else:
             yield f":::{{image}} {stem}"
         if kwargs.get("width") is not None:
-            yield f":width: {kwargs['width']}px"
+            yield f":width: {kwargs['width']}"
         if kwargs.get("height") is not None:
-            yield f":height: {kwargs['height']}px"
+            yield f":height: {kwargs['height']}"
         if align is not None:
             yield f":align: {align}"
         if caption is not None:
