@@ -4,112 +4,177 @@
 
 import shutil
 import subprocess
+from collections.abc import Generator
+from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, ClassVar
 
 
-def mermaid(  # noqa: C901
-    inp: Path | str,
-    out: Path,
-    theme: str = "default",
-    scale: int = 3,
-    render_width: int = 800,
-    render_height: int | None = None,
-    background: str = "white",
-    temp_dir: Path | None = None,
-    delete_temp_dir: bool = True,
-    mermaid_docker_image: str = "minlag/mermaid-cli",
-    mermaid_volume_mount: str = "/data",
-    use_local_mmdc_instead: bool = False,
-) -> None:
+@dataclass
+class Options:
     """
-    Generate a mermaid diagram from a mermaid code block or input file.
-
-    Parameters:
-        inp: A raw mermaid code block or a path to a file containing mermaid code.
-        out: The path to the output file.
-        theme: The theme to use for the diagram.
-        scale: A scaling factor for the diagram.
-        render_width: The width of the diagram in pixels.
-        render_height: The height of the diagram in pixels.
-        background: The background color of the generated diagram.
-        temp_dir: A temporary directory to use for intermediate files.
-        delete_temp_dir: Whether to delete the temporary directory after execution.
-        mermaid_docker_image: The docker image containing the mermaid-cli tool.
-        mermaid_volume_mount: The directory in the docker container to mount the temporary directory to.
-        use_local_mmdc_instead: Whether to use the docker image or a locally installed mermaid-cli tool named mmdc.
+    Specific options for a callback function.
     """
-    out = Path(out)
 
-    with temp_dir or TemporaryDirectory(
-        dir=None if temp_dir is None else str(temp_dir), delete=delete_temp_dir
-    ) as tmp_root:
-        tmp_root = Path(str(tmp_root))
 
-        if isinstance(inp, str):
-            tmp_inp = tmp_root / out.with_suffix(".mmd").name
-            with tmp_inp.open("w") as stream:
-                stream.write(inp)
+@dataclass
+class MermaidOptions(Options):
+    """
+    Specific options for the mermaid callback function.
+    """
+
+    #: The theme to use for the diagram.
+    theme: str = "default"
+    #: A scaling factor for the diagram.
+    scale: int = 3
+    #: The width of the diagram in pixels.
+    render_width: int = 800
+    #: The height of the diagram in pixels.
+    render_height: int | None = None
+    #: The background color of the generated diagram.
+    background: str = "white"
+    #: The docker image containing the mermaid-cli tool.
+    mermaid_docker_image: str = "minlag/mermaid-cli"
+    #: The directory in the docker container to mount the temporary directory to.
+    mermaid_volume_mount: str = "/data"
+    #: Whether to use the docker image or a locally installed mermaid-cli tool named mmdc.
+    use_local_mmdc_instead: bool = False
+
+
+class RunCommandInTempDir:
+    """
+    A wrapper to run a command in a temporary directory.
+    """
+
+    #: The extension for raw input files.
+    RAW_INPUT_EXT: ClassVar[str] = ""
+    #: The valid extensions for output files.
+    VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset(())
+
+    def command(self, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Generator[str, None, None]:
+        """
+        Generate the command to run.
+
+        Args:
+            tmp_inp: The input file, located in the temporary directory.
+            tmp_out: The output file, located in the temporary directory.
+            tmp_root: The current temporary directory.
+            kwargs: Additional keyword arguments.
+
+        Yields:
+            str: The command strings that were generated.
+        """
+        raise NotImplementedError
+
+    def __call__(
+        self, *, inp: Path | str, out: Path, temp_dir: Path | None = None, delete_temp_dir: bool = True, **kwargs: Any
+    ) -> None:
+        """
+        Run the command in a temporary directory.
+
+        Args:
+            inp: The input file or a raw input string.
+            out: The output file.
+            temp_dir: A temporary directory to use for intermediate files.
+            delete_temp_dir: Whether to delete the temporary directory after execution.
+            **kwargs: Additional keyword arguments.
+        """
+        out = Path(out)
+
+        with temp_dir or TemporaryDirectory(
+            dir=None if temp_dir is None else str(temp_dir), delete=delete_temp_dir
+        ) as tmp_root:
+            tmp_root = Path(str(tmp_root))
+
+            if isinstance(inp, str):
+                tmp_inp = tmp_root / out.with_suffix(self.RAW_INPUT_EXT).name
+                with tmp_inp.open("w") as stream:
+                    stream.write(inp)
+            else:
+                if not inp.exists():
+                    raise FileNotFoundError(f"input file does not exist!: {inp}")
+
+                tmp_inp = tmp_root / inp.name
+                shutil.copy(inp, tmp_inp)
+
+            if not out.parent.exists():
+                raise FileNotFoundError(f"output directory does not exist!: {out.parent}")
+
+            if out.is_dir():
+                raise IsADirectoryError(out)
+
+            tmp_out = tmp_root / out.name
+            if tmp_out.exists():
+                raise FileExistsError(tmp_out)
+
+            if tmp_out.suffix.lower() not in self.VALID_OUT_EXT:
+                raise ValueError(
+                    f"Expected output file to have a {', '.join(self.VALID_OUT_EXT)} extension, got {tmp_out.suffix}"
+                )
+
+            if tmp_inp.suffix.lower() not in {self.RAW_INPUT_EXT}:
+                raise ValueError(f"Expected input file to have a .mmd extension, got {tmp_inp.suffix}")
+
+            try:
+                subprocess.check_call(list(self.command(tmp_inp=tmp_inp, tmp_out=tmp_out, tmp_root=tmp_root, **kwargs)))
+            except subprocess.CalledProcessError:
+                raise RuntimeError("Failed to execute command") from None
+
+            if not tmp_out.exists():
+                raise FileNotFoundError(tmp_out)
+
+            shutil.copy(tmp_out, out)
+
+
+class MermaidCallback(RunCommandInTempDir):
+    """
+    A callback function for generating mermaid diagrams.
+    """
+
+    #: The extension for raw input files.
+    RAW_INPUT_EXT: ClassVar[str] = ".mmd"
+    #: The valid extensions for output files.
+    VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset((".svg", ".png", ".pdf"))
+
+    def command(self, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Generator[str, None, None]:
+        """
+        Generate the command to run.
+
+        Args:
+            tmp_inp: The input file, located in the temporary directory.
+            tmp_out: The output file, located in the temporary directory.
+            tmp_root: The current temporary directory.
+            kwargs: Additional keyword arguments.
+
+        Yields:
+            str: The command strings that were generated.
+        """
+        opts = MermaidOptions(**kwargs)
+
+        if opts.use_local_mmdc_instead:
+            yield "mmdc"
         else:
-            if not inp.exists():
-                raise FileNotFoundError(f"input file does not exist!: {inp}")
+            yield "docker"
+            yield "run"
+            yield "--rm"
+            yield "-v"
+            yield f"{tmp_root}:{opts.mermaid_volume_mount}"
+            yield opts.mermaid_docker_image
 
-            tmp_inp = tmp_root / inp.name
-            shutil.copy(inp, tmp_inp)
+        yield "-t"
+        yield opts.theme
+        yield "-b"
+        yield opts.background
+        yield "-s"
+        yield str(opts.scale)
+        yield "-w"
+        yield str(opts.render_width)
+        yield from (() if opts.render_height is None else ("-H", str(opts.render_height)))
+        yield "-i"
+        yield tmp_inp.name
+        yield "-o"
+        yield tmp_out.name
 
-        if not out.parent.exists():
-            raise FileNotFoundError(f"output directory does not exist!: {out.parent}")
 
-        if out.is_dir():
-            raise IsADirectoryError(out)
-
-        tmp_out = tmp_root / out.name
-        if tmp_out.exists():
-            raise FileExistsError(tmp_out)
-
-        if tmp_out.suffix.lower() not in {".svg", ".png", ".pdf"}:
-            raise ValueError(f"Expected output file to have a .svg, .png, or .pdf extension, got {tmp_out.suffix}")
-
-        if tmp_inp.suffix.lower() not in {".mmd"}:
-            raise ValueError(f"Expected input file to have a .mmd extension, got {tmp_inp.suffix}")
-
-        if not use_local_mmdc_instead:
-            command = [
-                "docker",
-                "run",
-                "--rm",
-                "-v",
-                f"{tmp_root}:{mermaid_volume_mount}",
-                mermaid_docker_image,
-            ]
-        else:
-            command = [
-                "mmdc",
-            ]
-
-        command = [
-            *command,
-            "-t",
-            theme,
-            "-b",
-            background,
-            "-s",
-            str(scale),
-            "-w",
-            str(render_width),
-            *(() if render_height is None else ("-H", str(render_height))),
-            "-i",
-            tmp_inp.name,
-            "-o",
-            tmp_out.name,
-        ]
-
-        try:
-            subprocess.check_call(command)
-        except subprocess.CalledProcessError:
-            raise RuntimeError("Failed to execute mermaid command") from None
-
-        if not tmp_out.exists():
-            raise FileNotFoundError(tmp_out)
-
-        shutil.copy(tmp_out, out)
+mermaid = MermaidCallback()

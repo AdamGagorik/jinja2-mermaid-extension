@@ -10,7 +10,7 @@ from typing import Any
 from jinja2 import Environment
 
 from jinja2_mermaid_extension.base import GenImageExtension
-from jinja2_mermaid_extension.callback import mermaid
+from jinja2_mermaid_extension.callback import MermaidOptions, mermaid
 
 
 class MermaidExtension(GenImageExtension):
@@ -27,6 +27,7 @@ class MermaidExtension(GenImageExtension):
 
     @property
     def _valid_keys(self) -> Generator[str]:
+        yield from MermaidOptions.__annotations__.keys()
         yield from inspect.signature(mermaid).parameters
 
     @staticmethod

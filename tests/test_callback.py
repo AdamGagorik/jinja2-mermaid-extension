@@ -36,7 +36,16 @@ def test_mermaid(
     with monkeypatch.context() as m:
         mock_check_call = Mock(spec=subprocess.check_call, side_effect=side_effect)
         m.setattr(subprocess, "check_call", lambda *args, **kwargs: mock_check_call(*args, **kwargs))
-        mermaid(inp, out, theme, scale, width, height, background, temp_dir=tmp_path)
+        mermaid(
+            inp=inp,
+            out=out,
+            theme=theme,
+            scale=scale,
+            render_width=width,
+            render_height=height,
+            background=background,
+            temp_dir=tmp_path,
+        )
         mock_check_call.assert_called_once()
 
 
@@ -101,7 +110,7 @@ def touch(tmp_path: Path, *names: str) -> Path:
             },
             lambda tmp_path: None,
             ValueError,
-            "Expected output file to have a .svg, .png, or .pdf extension",
+            "Expected output file to have a .* extension",
             False,
             id="ValueError(out)",
         ),
@@ -123,7 +132,7 @@ def touch(tmp_path: Path, *names: str) -> Path:
             },
             lambda tmp_path: tmp_path.joinpath("wrong.pdf").touch(),
             RuntimeError,
-            "Failed to execute mermaid command",
+            "Failed to execute command",
             True,
             id="RuntimeError",
         ),

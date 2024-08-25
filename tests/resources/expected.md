@@ -1,14 +1,14 @@
 # Path Output + Raw Input
 
-./test.png
+test.png
 
 # Path Output + Markdown Input
 
-./test.png
+test.png
 
 # Markdown Output + Markdown Input
 
-![test.png](./test.png)
+![test.png](test.png)
 
 # Markdown Output (just_name) + Markdown Input
 
@@ -26,7 +26,7 @@
 
 # MyST Output + Markdown Input + Caption
 
-:::{figure} ./test.png
+:::{figure} test.png
 :align: center
 
 This is a test caption!
