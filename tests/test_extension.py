@@ -53,5 +53,5 @@ def test_run_extension(mode: Mode, monkeypatch: MonkeyPatch, tmp_path: Path) -> 
         env = Environment(extensions=[MermaidExtension])  # noqa: S701
         template = env.from_string(TEST_TEMPLATE.format(mode=mode.value))
         rendered = template.render(mermaid_output_root=tmp_path).strip()
-        assert rendered == str(tmp_path.joinpath("test.png"))
+        assert rendered == "./test.png"
         mock_mermaid.assert_called_once()

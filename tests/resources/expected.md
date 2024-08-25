@@ -1,22 +1,22 @@
 # Path Output + Raw Input
 
-{{ tmp_path / 'test.png' }}
+./test.png
 
 # Path Output + Markdown Input
 
-{{ tmp_path / 'test.png' }}
+./test.png
 
 # Markdown Output + Markdown Input
 
-![test.png]({{ tmp_path / 'test.png' }})
+![test.png](./test.png)
 
 # Markdown Output (just_name) + Markdown Input
 
 ![test.png](test.png)
 
-# Markdown Output (relative_to) + Markdown Input
+# Markdown Output (full_path) + Markdown Input
 
-![test.png](test.png)
+![test.png]({{ tmp_path / 'test.png' }})
 
 # MyST Output (just_name) + Markdown Input
 
@@ -26,7 +26,7 @@
 
 # MyST Output + Markdown Input + Caption
 
-:::{figure} {{ tmp_path / 'test.png' }}
+:::{figure} ./test.png
 :align: center
 
 This is a test caption!

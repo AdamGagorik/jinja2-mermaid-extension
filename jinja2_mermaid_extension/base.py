@@ -7,6 +7,7 @@ import functools
 import inspect
 import json
 import logging
+import os
 from collections.abc import Generator, Hashable
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -134,7 +135,7 @@ class GenImageExtension(Extension):
 
         return "\n".join(self._gen_markdown_lines(context, output_name_salt=kwargs_json, **kwargs))
 
-    def _gen_markdown_lines(
+    def _gen_markdown_lines(  # noqa: C901
         self,
         context: Context,
         inp: Path | str,
@@ -143,8 +144,8 @@ class GenImageExtension(Extension):
         mode: str | Mode = Mode.OUT,
         align: str = "center",
         caption: str | None = None,
+        full_path: bool = False,
         just_name: bool = False,
-        relative_to: str | Path | None = None,
         use_cached: bool = True,
         parallel: bool = True,
         output_name_salt: str = "...",
@@ -190,7 +191,14 @@ class GenImageExtension(Extension):
         else:
             logger.warning("cached: %s", out)
 
-        stem = out.name if just_name else str(out) if relative_to is None else str(out.relative_to(Path(relative_to)))
+        if just_name:
+            stem = out.name
+        elif not full_path:
+            stem = str(out.relative_to(Path(out_root)))
+            if not stem.startswith("."):
+                stem = f".{os.sep}{stem}"
+        else:
+            stem = str(out)
 
         if mode == Mode.OUT:
             yield stem
@@ -226,6 +234,7 @@ class GenImageExtension(Extension):
     @staticmethod
     def _render_md(out: Path, stem: str, caption: str | None) -> Generator[str, None, None]:
         if caption is not None:
+            caption = caption.rstrip()
             yield f"![{caption}]({stem})"
         else:
             yield f"![{out.name}]({stem})"

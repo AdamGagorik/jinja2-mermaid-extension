@@ -39,14 +39,14 @@ mode: markdown
 just_name: true
 {% endmermaid %}
 
-# Markdown Output (relative_to) + Markdown Input
+# Markdown Output (full_path) + Markdown Input
 
 {% mermaid -%}
 inp: test.mmd
 ext: .png
 name: test
 mode: markdown
-relative_to: $tmp_path
+full_path: true
 {% endmermaid %}
 
 # MyST Output (just_name) + Markdown Input
