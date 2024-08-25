@@ -76,7 +76,7 @@ The following arguments are available:
 | **align**                | Replacement Option | The alignment of the diagram only valid for MyST output)                   | `"center"`             |
 | **caption**              | Replacement Option | A caption to add to the diagram only valid for MyST output).               | `None`                 |
 | **just_name**            | Replacement Option | Whether to only output the name of the generated diagram.                  | `False`                |
-| **relative_to**          | Replacement Option | The directory to make the path of the generated diagram relative to.       | `None`                 |
+| **full_path**            | Replacement Option | Whether to output the full path of the generated diagram.                  | `False`                |
 | **use_cached**           | Processing Option  | Whether to use a cached version of the diagram.                            | `True`                 |
 | **parallel**             | Processing Option  | Whether to render the diagram in parallel.                                 | `True`                 |
 | **temp_dir**             | Processing Option  | A temporary directory to use for intermediate files.                       | `None`                 |
