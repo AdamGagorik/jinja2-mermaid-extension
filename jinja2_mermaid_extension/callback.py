@@ -19,6 +19,19 @@ class Options:
 
 
 @dataclass
+class TikZOptions(Options):
+    """
+    Specific options for the tikz callback function.
+    """
+
+    #: The commands to run to generate the LaTeX output.
+    latex_command: tuple[str, ...] = (
+        "tectonic",
+        "{inp_tex}",
+    )
+
+
+@dataclass
 class MermaidOptions(Options):
     """
     Specific options for the mermaid callback function.
@@ -127,6 +140,35 @@ class RunCommandInTempDir:
             shutil.copy(tmp_out, out)
 
 
+class TikZCallback(RunCommandInTempDir):
+    """
+    A callback function for generating mermaid diagrams.
+    """
+
+    #: The extension for raw input files.
+    RAW_INPUT_EXT: ClassVar[str] = ".tex"
+    #: The valid extensions for output files.
+    VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset((".pdf",))
+
+    def command(self, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Generator[str, None, None]:
+        """
+        Generate the command to run.
+
+        Args:
+            tmp_inp: The input file, located in the temporary directory.
+            tmp_out: The output file, located in the temporary directory.
+            tmp_root: The current temporary directory.
+            kwargs: Additional keyword arguments.
+
+        Yields:
+            str: The command strings that were generated.
+        """
+        opts = TikZOptions(**kwargs)
+
+        for command in opts.latex_command:
+            yield command.format(inp_tex=tmp_inp.name)
+
+
 class MermaidCallback(RunCommandInTempDir):
     """
     A callback function for generating mermaid diagrams.
@@ -177,4 +219,5 @@ class MermaidCallback(RunCommandInTempDir):
         yield tmp_out.name
 
 
+tikz = TikZCallback()
 mermaid = MermaidCallback()
