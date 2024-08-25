@@ -13,8 +13,8 @@ def mermaid(
     out: Path,
     theme: str = "default",
     scale: int = 3,
-    width: int = 800,
-    height: int | None = None,
+    render_width: int = 800,
+    render_height: int | None = None,
     background: str = "white",
     temp_dir: Path | None = None,
     delete_temp_dir: bool = True,
@@ -29,8 +29,8 @@ def mermaid(
         out: The path to the output file.
         theme: The theme to use for the diagram.
         scale: A scaling factor for the diagram.
-        width: The width of the diagram in pixels.
-        height: The height of the diagram in pixels.
+        render_width: The width of the diagram in pixels.
+        render_height: The height of the diagram in pixels.
         background: The background color of the generated diagram.
         temp_dir: A temporary directory to use for intermediate files.
         delete_temp_dir: Whether to delete the temporary directory after execution.
@@ -86,8 +86,8 @@ def mermaid(
             "-s",
             str(scale),
             "-w",
-            str(width),
-            *(() if height is None else ("-H", str(height))),
+            str(render_width),
+            *(() if render_height is None else ("-H", str(render_height))),
             "-i",
             tmp_inp.name,
             "-o",

@@ -141,6 +141,8 @@ class GenImageExtension(Extension):
         ext: str = ".png",
         name: str | None = None,
         mode: str | Mode = Mode.OUT,
+        width: int | str | None = None,
+        height: int | str | None = None,
         align: str = "center",
         caption: str | None = None,
         full_path: bool = False,
@@ -204,7 +206,7 @@ class GenImageExtension(Extension):
         elif mode == Mode.RST:
             yield from self._render_rst(stem, caption)
         elif mode == Mode.MYST:
-            yield from self._render_myst(stem, align, caption, kwargs)
+            yield from self._render_myst(stem, align, caption, width, height)
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
@@ -244,15 +246,17 @@ class GenImageExtension(Extension):
             yield f".. image:: {stem}"
 
     @staticmethod
-    def _render_myst(stem: str, align: str, caption: str | None, kwargs: dict[str, Any]) -> Generator[str, None, None]:
+    def _render_myst(
+        stem: str, align: str, caption: str | None, width: int | str | None, height: int | str | None
+    ) -> Generator[str, None, None]:
         if caption is not None:
             yield f":::{{figure}} {stem}"
         else:
             yield f":::{{image}} {stem}"
-        if kwargs.get("width") is not None:
-            yield f":width: {kwargs['width']}"
-        if kwargs.get("height") is not None:
-            yield f":height: {kwargs['height']}"
+        if width is not None:
+            yield f":width: {width}"
+        if height is not None:
+            yield f":height: {height}"
         if align is not None:
             yield f":align: {align}"
         if caption is not None:
