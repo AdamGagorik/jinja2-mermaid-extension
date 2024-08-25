@@ -148,7 +148,7 @@ class GenImageExtension(Extension):
         full_path: bool = False,
         just_name: bool = False,
         use_cached: bool = True,
-        parallel: bool = True,
+        parallel: bool = False,
         output_name_salt: str = "...",
         **kwargs: Any,
     ) -> Generator[str, None, None]:
