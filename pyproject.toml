@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jinja2_mermaid_extension"
-version = "1.2.0"
+version = "1.2.1"
 description = "A jinja2 block to render a mermaid diagram"
 authors = ["Adam Gagorik <fadam.gagorik@gmail.com>"]
 repository = "https://github.com/AdamGagorik/jinja2-mermaid-extension"
