@@ -166,7 +166,7 @@ class TikZCallback(RunCommandInTempDir):
         opts = TikZOptions(**kwargs)
 
         for command in opts.latex_command:
-            yield command.format(inp_tex=tmp_inp.name)
+            yield command.format(inp_tex=tmp_inp)
 
 
 class MermaidCallback(RunCommandInTempDir):

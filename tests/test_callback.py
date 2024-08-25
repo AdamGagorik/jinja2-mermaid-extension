@@ -17,7 +17,7 @@ from jinja2_mermaid_extension.callback import mermaid, tikz
             lambda p: {
                 "inp": "raw",
             },
-            ("tectonic", "test.tex"),
+            ("tectonic",),
             id="default",
         ),
     ],
