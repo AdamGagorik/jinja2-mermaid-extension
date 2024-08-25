@@ -98,12 +98,12 @@ The following arguments are available:
 
 The block will be replaced by a string based on the `mode` argument.
 
-- `"path"`: Output the path to the generated image.
-- `"markdown"`: Output a simple markdown image link.
-- `"restructured"`: Output a restructured text image link.
-- `"myst_markdown"`: Output a MyST formatted markdown image.
+- `path`: Output the path to the generated image.
+- `markdown`: Output a simple markdown image link.
+- `restructured`: Output a restructured text image link.
+- `myst_markdown`: Output a MyST formatted markdown image.
 
-For example, when using `mode: "markdown"`, the example above will be replaced with:
+For example, when using `mode: markdown`, the example above will be replaced with:
 
 ```markdown
 ![An example mermaid diagram!](./test.png)
