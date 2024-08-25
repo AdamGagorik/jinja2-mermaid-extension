@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 
-def mermaid(
+def mermaid(  # noqa: C901
     inp: Path | str,
     out: Path,
     theme: str = "default",
@@ -20,6 +20,7 @@ def mermaid(
     delete_temp_dir: bool = True,
     mermaid_docker_image: str = "minlag/mermaid-cli",
     mermaid_volume_mount: str = "/data",
+    use_local_mmdc_instead: bool = False,
 ) -> None:
     """
     Generate a mermaid diagram from a mermaid code block or input file.
@@ -36,6 +37,7 @@ def mermaid(
         delete_temp_dir: Whether to delete the temporary directory after execution.
         mermaid_docker_image: The docker image containing the mermaid-cli tool.
         mermaid_volume_mount: The directory in the docker container to mount the temporary directory to.
+        use_local_mmdc_instead: Whether to use the docker image or a locally installed mermaid-cli tool named mmdc.
     """
     out = Path(out)
 
@@ -71,14 +73,22 @@ def mermaid(
         if tmp_inp.suffix.lower() not in {".mmd"}:
             raise ValueError(f"Expected input file to have a .mmd extension, got {tmp_inp.suffix}")
 
-        # noinspection SpellCheckingInspection
+        if not use_local_mmdc_instead:
+            command = [
+                "docker",
+                "run",
+                "--rm",
+                "-v",
+                f"{tmp_root}:{mermaid_volume_mount}",
+                mermaid_docker_image,
+            ]
+        else:
+            command = [
+                "mmdc",
+            ]
+
         command = [
-            "docker",
-            "run",
-            "--rm",
-            "-v",
-            f"{tmp_root}:{mermaid_volume_mount}",
-            mermaid_docker_image,
+            *command,
             "-t",
             theme,
             "-b",
