@@ -37,6 +37,8 @@ def mermaid(
         mermaid_docker_image: The docker image containing the mermaid-cli tool.
         mermaid_volume_mount: The directory in the docker container to mount the temporary directory to.
     """
+    out = Path(out)
+
     with temp_dir or TemporaryDirectory(
         dir=None if temp_dir is None else str(temp_dir), delete=delete_temp_dir
     ) as tmp_root:
@@ -47,6 +49,9 @@ def mermaid(
             with tmp_inp.open("w") as stream:
                 stream.write(inp)
         else:
+            if not inp.exists():
+                raise FileNotFoundError(f"input file does not exist!: {inp}")
+
             tmp_inp = tmp_root / inp.name
             shutil.copy(inp, tmp_inp)
 
@@ -62,9 +67,6 @@ def mermaid(
 
         if tmp_out.suffix.lower() not in {".svg", ".png", ".pdf"}:
             raise ValueError(f"Expected output file to have a .svg, .png, or .pdf extension, got {tmp_out.suffix}")
-
-        if not tmp_inp.exists():
-            raise FileNotFoundError(tmp_inp)
 
         if tmp_inp.suffix.lower() not in {".mmd"}:
             raise ValueError(f"Expected input file to have a .mmd extension, got {tmp_inp.suffix}")
