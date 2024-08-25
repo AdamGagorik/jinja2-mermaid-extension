@@ -63,8 +63,8 @@ diagram: |
 The following arguments are available:
 
 | Argument                 | Kind               | Description                                                                | Default                |
-| ------------------------ | ------------------ | -------------------------------------------------------------------------- | ---------------------- | --- |
-| **diagram** or **inp**   | Input              | The raw mermaid diagram code or the path to an `mmd` file.                 | `None`                 |     |
+| ------------------------ | ------------------ | -------------------------------------------------------------------------- | ---------------------- |
+| **diagram** or **inp**   | Input              | The raw mermaid diagram code or the path to an `mmd` file.                 | `None`                 |
 | **ext**                  | Output             | The file extension of the generated diagram.                               | `".png"`               |
 | **mode**                 | Replacement Option | How to render the output after processing.                                 | `"path"`               |
 | **theme**                | Mermaid CLI Option | The theme to use for the diagram.                                          | `"default"`            |
