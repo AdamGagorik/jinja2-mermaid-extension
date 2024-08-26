@@ -31,6 +31,13 @@ class TikZOptions(Options):
         "{inp_tex}",
     )
 
+    #: The commands to run to generate the SVG output.
+    pdf2svg_command: tuple[str, ...] = (
+        "pdf2svg",
+        "{inp_pdf}",
+        "{out_svg}",
+    )
+
 
 @dataclass
 class MermaidOptions(Options):
@@ -103,6 +110,22 @@ class RunCommandInTempDir:
         """
         raise NotImplementedError
 
+    @staticmethod
+    def finalize(*, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Path:
+        """
+        Finalize the output file.
+
+        Args:
+            tmp_inp: The input file, located in the temporary directory.
+            tmp_out: The output file, located in the temporary directory.
+            tmp_root: The current temporary directory.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The finalized output file.
+        """
+        return tmp_out
+
     def __call__(
         self, *, inp: Path | str, out: Path, temp_dir: Path | None = None, delete_temp_dir: bool = True, **kwargs: Any
     ) -> None:
@@ -153,6 +176,8 @@ class RunCommandInTempDir:
             except subprocess.CalledProcessError:
                 raise RuntimeError("Failed to execute command") from None
 
+            tmp_out = self.finalize(tmp_inp=tmp_inp, tmp_out=tmp_out, tmp_root=tmp_root, **kwargs)
+
             if not tmp_out.exists():
                 raise FileNotFoundError(tmp_out)
 
@@ -167,7 +192,7 @@ class TikZCallback(RunCommandInTempDir):
     #: The extension for raw input files.
     RAW_INPUT_EXT: ClassVar[str] = ".tex"
     #: The valid extensions for output files.
-    VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset((".pdf",))
+    VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset((".pdf", ".svg"))
 
     def command(self, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Generator[str, None, None]:
         """
@@ -186,6 +211,23 @@ class TikZCallback(RunCommandInTempDir):
 
         for command in opts.latex_command:
             yield command.format(inp_tex=tmp_inp)
+
+    @staticmethod
+    def finalize(*, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Path:
+        """
+        Finalize the output file.
+        """
+        opts = TikZOptions(**kwargs)
+
+        if tmp_out.suffix.lower() == ".svg":
+            inp_pdf = tmp_out.with_suffix(".pdf")
+            out_svg = tmp_out.with_suffix(".svg")
+            subprocess.check_call([c.format(inp_pdf=inp_pdf, out_svg=out_svg) for c in opts.pdf2svg_command])
+            inp_pdf.unlink(missing_ok=True)
+            print(inp_pdf)
+            return out_svg
+
+        return tmp_out
 
 
 class MermaidCallback(RunCommandInTempDir):

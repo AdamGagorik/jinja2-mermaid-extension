@@ -26,3 +26,12 @@ ext: .pdf
 name: test
 mode: path
 {% endtikz %}
+
+# Path Output + Markdown Input + SVG
+
+{% tikz -%}
+inp: test.tex
+ext: .svg
+name: test
+mode: path
+{% endtikz %}

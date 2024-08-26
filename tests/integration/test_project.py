@@ -21,14 +21,14 @@ def resource_root() -> Path:
 
 
 @pytest.mark.parametrize(
-    "template_name,expected_name",
+    "template_name,expected_name,count",
     [
-        # pytest.param("template.md", "expected.md", id="md"),
-        # pytest.param("template.rst", "expected.rst", id="rst"),
-        pytest.param("template.tikz.md", "expected.tikz.md", id="md.tikz"),
+        pytest.param("template.md", "expected.md", 1, id="md"),
+        pytest.param("template.rst", "expected.rst", 1, id="rst"),
+        pytest.param("template.tikz.md", "expected.tikz.md", 2, id="md.tikz"),
     ],
 )
-def test_project(resource_root: Path, template_name: str, expected_name: str, run_root: Path):
+def test_project(resource_root: Path, template_name: str, expected_name: str, run_root: Path, count: int):
     for path in run_root.iterdir():
         if path.suffix in {".png", ".svg"}:
             path.unlink()
@@ -49,4 +49,4 @@ def test_project(resource_root: Path, template_name: str, expected_name: str, ru
 
     runner().wait()
     assert rendered == expected
-    assert len(list(run_root.iterdir())) == 1
+    assert len(list(run_root.iterdir())) == count
