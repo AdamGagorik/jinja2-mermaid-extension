@@ -242,30 +242,43 @@ class TikZCallback(RunCommandInTempDir):
         for command in opts.latex_command:
             yield command.format(inp_tex=tmp_inp)
 
-    @staticmethod
-    def finalize(*, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Path:
+    @classmethod
+    def finalize(cls, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Path:
         """
         Finalize the output file.
         """
         opts = TikZOptions(**kwargs)
 
         if tmp_out.suffix.lower() == ".svg":
-            args = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_svg": tmp_out}
-            command = [c.format(**args) for c in opts.pdf2svg_command]
-            if command and has_tool(command[0]):
-                subprocess.check_call(command)
-            else:
-                raise FileNotFoundError("convert command not found")
-
+            return cls._handle_pdf_to_svg(opts, tmp_out)
         elif tmp_out.suffix.lower() == ".png":
-            args = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_png": tmp_out, "density": opts.convert_command_density}
-            command = [c.format(**args) for c in opts.convert_command]
-            if command and has_tool(command[0]):
-                subprocess.check_call(command)
-            else:
-                raise FileNotFoundError("convert command not found")
+            return cls._handle_pdf_to_png(opts, tmp_out)
+        else:
+            return tmp_out
 
-        return tmp_out
+    @staticmethod
+    def _handle_pdf_to_svg(opts: TikZOptions, tmp_out: Path) -> Path:
+        args: dict[str, Any] = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_svg": tmp_out}
+        command = [c.format(**args) for c in opts.pdf2svg_command]
+        if command and has_tool(command[0]):
+            subprocess.check_call(command)
+            return tmp_out
+        else:
+            raise FileNotFoundError("convert command not found")
+
+    @staticmethod
+    def _handle_pdf_to_png(opts: TikZOptions, tmp_out: Path) -> Path:
+        args: dict[str, Any] = {
+            "inp_pdf": tmp_out.with_suffix(".pdf"),
+            "out_png": tmp_out,
+            "density": str(opts.convert_command_density),
+        }
+        command = [c.format(**args) for c in opts.convert_command]
+        if command and has_tool(command[0]):
+            subprocess.check_call(command)
+            return tmp_out
+        else:
+            raise FileNotFoundError("convert command not found")
 
 
 class MermaidCallback(RunCommandInTempDir):
