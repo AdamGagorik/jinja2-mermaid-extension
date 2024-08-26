@@ -3,11 +3,12 @@
 """
 
 import functools
+import os
 import shutil
 import subprocess
 from collections.abc import Generator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, ClassVar
@@ -41,7 +42,10 @@ class TikZOptions(Options):
     """
 
     #: Allow commands to be missing?
-    allow_missing: bool = False
+    allow_missing: bool = field(
+        default_factory=lambda: os.environ.get("JINJA2_MERMAID_EXTENSION_ALLOW_MISSING_COMMANDS", "0").lower()
+        in {"1", "true"}
+    )
 
     #: The commands to run to generate the LaTeX output.
     latex_command: tuple[str, ...] = (
@@ -141,11 +145,12 @@ class RunCommandInTempDir:
         raise NotImplementedError
 
     @staticmethod
-    def finalize(*, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Path:
+    def finalize(*, out: Path, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> None:
         """
         Finalize the output file.
 
         Args:
+            out: The output file.
             tmp_inp: The input file, located in the temporary directory.
             tmp_out: The output file, located in the temporary directory.
             tmp_root: The current temporary directory.
@@ -154,7 +159,10 @@ class RunCommandInTempDir:
         Returns:
             The finalized output file.
         """
-        return tmp_out
+        if not tmp_out.exists():
+            raise FileNotFoundError(tmp_out)
+
+        shutil.copy(tmp_out, out)
 
     def __call__(
         self, *, inp: Path | str, out: Path, temp_dir: Path | None = None, delete_temp_dir: bool = True, **kwargs: Any
@@ -206,12 +214,7 @@ class RunCommandInTempDir:
             except subprocess.CalledProcessError:
                 raise RuntimeError("Failed to execute command") from None
 
-            tmp_out = self.finalize(tmp_inp=tmp_inp, tmp_out=tmp_out, tmp_root=tmp_root, **kwargs)
-
-            if not tmp_out.exists():
-                raise FileNotFoundError(tmp_out)
-
-            shutil.copy(tmp_out, out)
+            self.finalize(out=out, tmp_inp=tmp_inp, tmp_out=tmp_out, tmp_root=tmp_root, **kwargs)
 
 
 class TikZCallback(RunCommandInTempDir):
@@ -250,33 +253,32 @@ class TikZCallback(RunCommandInTempDir):
             yield command.format(inp_tex=tmp_inp)
 
     @classmethod
-    def finalize(cls, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Path:
+    def finalize(cls, *, out: Path, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> None:
         """
         Finalize the output file.
         """
         opts = TikZOptions(**kwargs)
 
         if tmp_out.suffix.lower() == ".svg":
-            return cls._handle_pdf_to_svg(opts, tmp_out)
+            cls._handle_pdf_to_svg(opts, out, tmp_out)
         elif tmp_out.suffix.lower() == ".png":
-            return cls._handle_pdf_to_png(opts, tmp_out)
+            cls._handle_pdf_to_png(opts, out, tmp_out)
         else:
-            return tmp_out
+            shutil.copy(tmp_out, out)
 
     @staticmethod
-    def _handle_pdf_to_svg(opts: TikZOptions, tmp_out: Path) -> Path:
+    def _handle_pdf_to_svg(opts: TikZOptions, out: Path, tmp_out: Path) -> None:
         args: dict[str, Any] = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_svg": tmp_out}
         command = [c.format(**args) for c in opts.pdf2svg_command]
         if command and has_tool(command[0]):
             subprocess.check_call(command)
-            return tmp_out
+            shutil.copy(tmp_out, out)
         else:
-            if opts.allow_missing:
-                return tmp_out
-            raise FileNotFoundError("convert command not found")
+            if not opts.allow_missing:
+                raise FileNotFoundError("convert command not found")
 
     @staticmethod
-    def _handle_pdf_to_png(opts: TikZOptions, tmp_out: Path) -> Path:
+    def _handle_pdf_to_png(opts: TikZOptions, out: Path, tmp_out: Path) -> None:
         args: dict[str, Any] = {
             "inp_pdf": tmp_out.with_suffix(".pdf"),
             "out_png": tmp_out,
@@ -285,11 +287,10 @@ class TikZCallback(RunCommandInTempDir):
         command = [c.format(**args) for c in opts.convert_command]
         if command and has_tool(command[0]):
             subprocess.check_call(command)
-            return tmp_out
+            shutil.copy(tmp_out, out)
         else:
-            if opts.allow_missing:
-                return tmp_out
-            raise FileNotFoundError("convert command not found")
+            if not opts.allow_missing:
+                raise FileNotFoundError("convert command not found")
 
 
 class MermaidCallback(RunCommandInTempDir):
