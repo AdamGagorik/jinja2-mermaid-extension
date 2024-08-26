@@ -5,6 +5,7 @@
 import shutil
 import subprocess
 from collections.abc import Generator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -55,6 +56,28 @@ class MermaidOptions(Options):
     use_local_mmdc_instead: bool = False
 
 
+@contextmanager
+def handle_temp_root(force: Path | None, delete_temp_dir: bool) -> Generator[Path, None, None]:
+    """
+    Handle the temporary root directory.
+
+    Args:
+        force: A forced temporary root directory.
+        delete_temp_dir: Whether to delete the temporary directory after execution.
+
+    Yields:
+        Path: The temporary root directory.
+    """
+    try:
+        if force:
+            yield force
+        else:
+            with TemporaryDirectory(delete=delete_temp_dir) as tmp_root:
+                yield Path(tmp_root)
+    finally:
+        pass
+
+
 class RunCommandInTempDir:
     """
     A wrapper to run a command in a temporary directory.
@@ -95,11 +118,7 @@ class RunCommandInTempDir:
         """
         out = Path(out)
 
-        with temp_dir or TemporaryDirectory(
-            dir=None if temp_dir is None else str(temp_dir), delete=delete_temp_dir
-        ) as tmp_root:
-            tmp_root = Path(str(tmp_root))
-
+        with handle_temp_root(temp_dir, delete_temp_dir) as tmp_root:
             if isinstance(inp, str):
                 tmp_inp = tmp_root / out.with_suffix(self.RAW_INPUT_EXT).name
                 with tmp_inp.open("w") as stream:
