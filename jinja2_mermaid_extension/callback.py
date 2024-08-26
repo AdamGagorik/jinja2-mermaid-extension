@@ -2,6 +2,7 @@
 ## This module defines a callback function for generating mermaid diagrams.
 """
 
+import functools
 import shutil
 import subprocess
 from collections.abc import Generator
@@ -10,6 +11,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, ClassVar
+
+
+@functools.lru_cache
+def has_tool(command: str) -> bool:
+    """
+    Check if a command is available on the system.
+
+    Args:
+        command: The command to check.
+
+    Returns:
+        bool: True if the command is available, False otherwise.
+    """
+    return shutil.which(command) is not None
 
 
 @dataclass
@@ -36,6 +51,18 @@ class TikZOptions(Options):
         "pdf2svg",
         "{inp_pdf}",
         "{out_svg}",
+    )
+
+    #: The DPI to use for the PNG output.
+    density: int = 300
+
+    #: The commands to run to generate the PNG output.
+    convert_command: tuple[str, ...] = (
+        "convert",
+        "-density",
+        "{density}",
+        "{inp_pdf}",
+        "{out_png}",
     )
 
 
@@ -192,7 +219,7 @@ class TikZCallback(RunCommandInTempDir):
     #: The extension for raw input files.
     RAW_INPUT_EXT: ClassVar[str] = ".tex"
     #: The valid extensions for output files.
-    VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset((".pdf", ".svg"))
+    VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset((".pdf", ".svg", ".png"))
 
     def command(self, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Generator[str, None, None]:
         """
@@ -209,6 +236,9 @@ class TikZCallback(RunCommandInTempDir):
         """
         opts = TikZOptions(**kwargs)
 
+        if opts.latex_command and not has_tool(opts.latex_command[0]):
+            raise FileNotFoundError("tectonic command not found")
+
         for command in opts.latex_command:
             yield command.format(inp_tex=tmp_inp)
 
@@ -220,12 +250,20 @@ class TikZCallback(RunCommandInTempDir):
         opts = TikZOptions(**kwargs)
 
         if tmp_out.suffix.lower() == ".svg":
-            inp_pdf = tmp_out.with_suffix(".pdf")
-            out_svg = tmp_out.with_suffix(".svg")
-            subprocess.check_call([c.format(inp_pdf=inp_pdf, out_svg=out_svg) for c in opts.pdf2svg_command])
-            inp_pdf.unlink(missing_ok=True)
-            print(inp_pdf)
-            return out_svg
+            args = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_svg": tmp_out}
+            command = [c.format(**args) for c in opts.pdf2svg_command]
+            if command and has_tool(command[0]):
+                subprocess.check_call(command)
+            else:
+                raise FileNotFoundError("convert command not found")
+
+        elif tmp_out.suffix.lower() == ".png":
+            args = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_png": tmp_out, "density": opts.density}
+            command = [c.format(**args) for c in opts.convert_command]
+            if command and has_tool(command[0]):
+                subprocess.check_call(command)
+            else:
+                raise FileNotFoundError("convert command not found")
 
         return tmp_out
 

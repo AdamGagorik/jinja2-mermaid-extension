@@ -9,3 +9,7 @@ test.pdf
 # Path Output + Markdown Input + SVG
 
 test.svg
+
+# Path Output + Markdown Input + PNG
+
+test.png

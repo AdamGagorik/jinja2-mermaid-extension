@@ -35,3 +35,12 @@ ext: .svg
 name: test
 mode: path
 {% endtikz %}
+
+# Path Output + Markdown Input + PNG
+
+{% tikz -%}
+inp: test.tex
+ext: .png
+name: test
+mode: path
+{% endtikz %}

@@ -25,7 +25,7 @@ def resource_root() -> Path:
     [
         pytest.param("template.md", "expected.md", 1, id="md"),
         pytest.param("template.rst", "expected.rst", 1, id="rst"),
-        pytest.param("template.tikz.md", "expected.tikz.md", 2, id="md.tikz"),
+        pytest.param("template.tikz.md", "expected.tikz.md", 3, id="md.tikz"),
     ],
 )
 def test_project(resource_root: Path, template_name: str, expected_name: str, run_root: Path, count: int):
