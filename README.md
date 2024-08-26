@@ -143,9 +143,12 @@ diagram: |
 
 The following tikz specific arguments are available:
 
-| Argument          | Kind        | Description                                  | Default                |
-| ----------------- | ----------- | -------------------------------------------- | ---------------------- |
-| **latex_command** | TikZ Option | The command to use to compile tikz diagrams. | `"tectonic {inp_tex}"` |
+| Argument                    | Kind        | Description                                        | Default                         |
+| --------------------------- | ----------- | -------------------------------------------------- | ------------------------------- |
+| **latex_command**           | TikZ Option | The command to use to compile tikz diagrams.       | `"tectonic {inp_tex}"`          |
+| **pdf2svg_command**         | TikZ Option | The command to use to convert pdf to svg diagrams. | `"pdf2svg {inp_pdf} {out_svg}"` |
+| **convert_command**         | TikZ Option | The command to use to convert pdf to png diagrams. | `"convert {inp_pdf} {out_png}"` |
+| **convert_command_density** | TikZ Option | The density of the png diagram.                    | `300`                           |
 
 ---
 

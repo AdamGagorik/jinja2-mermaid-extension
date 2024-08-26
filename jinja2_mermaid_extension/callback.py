@@ -53,9 +53,6 @@ class TikZOptions(Options):
         "{out_svg}",
     )
 
-    #: The DPI to use for the PNG output.
-    density: int = 300
-
     #: The commands to run to generate the PNG output.
     convert_command: tuple[str, ...] = (
         "convert",
@@ -64,6 +61,9 @@ class TikZOptions(Options):
         "{inp_pdf}",
         "{out_png}",
     )
+
+    #: The DPI to use for the PNG output.
+    convert_command_density: int = 300
 
 
 @dataclass
@@ -258,7 +258,7 @@ class TikZCallback(RunCommandInTempDir):
                 raise FileNotFoundError("convert command not found")
 
         elif tmp_out.suffix.lower() == ".png":
-            args = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_png": tmp_out, "density": opts.density}
+            args = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_png": tmp_out, "density": opts.convert_command_density}
             command = [c.format(**args) for c in opts.convert_command]
             if command and has_tool(command[0]):
                 subprocess.check_call(command)
