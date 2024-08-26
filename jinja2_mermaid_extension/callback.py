@@ -40,6 +40,9 @@ class TikZOptions(Options):
     Specific options for the tikz callback function.
     """
 
+    #: Allow commands to be missing?
+    allow_missing: bool = False
+
     #: The commands to run to generate the LaTeX output.
     latex_command: tuple[str, ...] = (
         "tectonic",
@@ -237,6 +240,10 @@ class TikZCallback(RunCommandInTempDir):
         opts = TikZOptions(**kwargs)
 
         if opts.latex_command and not has_tool(opts.latex_command[0]):
+            if opts.allow_missing:
+                yield "echo"
+                yield "Skipping tectonic command because it is not found."
+
             raise FileNotFoundError("tectonic command not found")
 
         for command in opts.latex_command:
@@ -264,6 +271,8 @@ class TikZCallback(RunCommandInTempDir):
             subprocess.check_call(command)
             return tmp_out
         else:
+            if opts.allow_missing:
+                return tmp_out
             raise FileNotFoundError("convert command not found")
 
     @staticmethod
@@ -278,6 +287,8 @@ class TikZCallback(RunCommandInTempDir):
             subprocess.check_call(command)
             return tmp_out
         else:
+            if opts.allow_missing:
+                return tmp_out
             raise FileNotFoundError("convert command not found")
 
 
