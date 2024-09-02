@@ -5,13 +5,14 @@
 import functools
 import os
 import shutil
-import subprocess
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, ClassVar
+
+from jinja2_mermaid_extension.run import run
 
 
 @functools.lru_cache
@@ -62,6 +63,7 @@ class TikZOptions(Options):
 
     #: The commands to run to generate the PNG output.
     convert_command: tuple[str, ...] = (
+        "magick",
         "convert",
         "-density",
         "{density}",
@@ -209,11 +211,7 @@ class RunCommandInTempDir:
             if tmp_inp.suffix.lower() not in {self.RAW_INPUT_EXT}:
                 raise ValueError(f"Expected input file to have a .mmd extension, got {tmp_inp.suffix}")
 
-            try:
-                subprocess.check_call(list(self.command(tmp_inp=tmp_inp, tmp_out=tmp_out, tmp_root=tmp_root, **kwargs)))
-            except subprocess.CalledProcessError:
-                raise RuntimeError("Failed to execute command") from None
-
+            run(self.command(tmp_inp=tmp_inp, tmp_out=tmp_out, tmp_root=tmp_root, **kwargs), check=True)
             self.finalize(out=out, tmp_inp=tmp_inp, tmp_out=tmp_out, tmp_root=tmp_root, **kwargs)
 
 
@@ -271,11 +269,11 @@ class TikZCallback(RunCommandInTempDir):
         args: dict[str, Any] = {"inp_pdf": tmp_out.with_suffix(".pdf"), "out_svg": tmp_out}
         command = [c.format(**args) for c in opts.pdf2svg_command]
         if command and has_tool(command[0]):
-            subprocess.check_call(command)
+            run(command, check=True)
             shutil.copy(tmp_out, out)
         else:
             if not opts.allow_missing:
-                raise FileNotFoundError("convert command not found")
+                raise FileNotFoundError("command not found")
 
     @staticmethod
     def _handle_pdf_to_png(opts: TikZOptions, out: Path, tmp_out: Path) -> None:
@@ -286,11 +284,11 @@ class TikZCallback(RunCommandInTempDir):
         }
         command = [c.format(**args) for c in opts.convert_command]
         if command and has_tool(command[0]):
-            subprocess.check_call(command)
+            run(command, check=True)
             shutil.copy(tmp_out, out)
         else:
             if not opts.allow_missing:
-                raise FileNotFoundError("convert command not found")
+                raise FileNotFoundError("command not found")
 
 
 class MermaidCallback(RunCommandInTempDir):

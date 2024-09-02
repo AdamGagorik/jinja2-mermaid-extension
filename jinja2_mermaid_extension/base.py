@@ -6,7 +6,6 @@ import enum
 import functools
 import inspect
 import json
-import logging
 from collections.abc import Generator, Hashable
 from concurrent.futures import Executor, Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -20,7 +19,7 @@ from jinja2.ext import Extension
 from jinja2.parser import Parser
 from jinja2.runtime import Context, Macro
 
-logger = logging.getLogger(__name__)
+from jinja2_mermaid_extension.logger import logger
 
 namespace = UUID("b5db653c-cc06-466c-9b39-775db782a06f")
 

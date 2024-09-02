@@ -43,13 +43,13 @@ def do_run_callback_test(
     out = tmp_path / "out" / f"test.{out_ext}"
     out.parent.mkdir(parents=True, exist_ok=False)
 
-    def side_effect(command: list[str]) -> None:
+    def side_effect(command: list[str], check: bool) -> None:
         (tmp_path / f"test.{out_ext}").write_text("test")
         assert command
 
     with monkeypatch.context() as m:
-        mock_check_call = Mock(spec=subprocess.check_call, side_effect=side_effect)
-        m.setattr(subprocess, "check_call", lambda *args, **kwargs: mock_check_call(*args, **kwargs))
+        mock_check_call = Mock(spec=subprocess.run, side_effect=side_effect)
+        m.setattr(subprocess, "run", lambda *args, **kwargs: mock_check_call(*args, **kwargs))
         callback(**callback_kwargs, out=out, temp_dir=tmp_path)
 
         assert out.exists()
@@ -176,8 +176,8 @@ def touch(root: Path, *names: str) -> Path:
                 "out": "output.pdf",
             },
             lambda p: p.joinpath("wrong.pdf").touch(),
-            RuntimeError,
-            "Failed to execute command",
+            subprocess.CalledProcessError,
+            None,
             True,
             id="RuntimeError",
         ),
@@ -204,7 +204,7 @@ def test_callback_raises(
         raise subprocess.CalledProcessError(1, command)
 
     with monkeypatch.context() as m:
-        mock_check_call = Mock(spec=subprocess.check_call, side_effect=side_effect)
+        mock_check_call = Mock(spec=subprocess.run, side_effect=side_effect)
         m.setattr(subprocess, "check_call", lambda *args, **kwargs: mock_check_call(*args, **kwargs))
         with pytest.raises(exception, match=phrase):
             callback(**callback_kwargs, temp_dir=tmp_path)

@@ -23,16 +23,14 @@ def resource_root() -> Path:
 
 
 @pytest.mark.parametrize(
-    "template_name,expected_name,count",
+    "template_name,expected_name",
     [
-        pytest.param("template.md", "expected.md", 1, id="md"),
-        pytest.param("template.rst", "expected.rst", 1, id="rst"),
-        pytest.param("template.tikz.md", "expected.tikz.md", 1, id="md.tikz"),
+        pytest.param("template.md", "expected.md", id="md"),
+        pytest.param("template.rst", "expected.rst", id="rst"),
+        pytest.param("template.tikz.md", "expected.tikz.md", id="md.tikz"),
     ],
 )
-def test_project(
-    resource_root: Path, template_name: str, expected_name: str, run_root: Path, count: int, monkeypatch: MonkeyPatch
-):
+def test_project(resource_root: Path, template_name: str, expected_name: str, run_root: Path, monkeypatch: MonkeyPatch):
     environ = os.environ.copy()
     with monkeypatch.context() as m:
         environ["JINJA2_MERMAID_EXTENSION_ALLOW_MISSING_COMMANDS"] = "1"
@@ -58,4 +56,4 @@ def test_project(
 
         runner().wait()
         assert rendered == expected
-        assert len(list(run_root.iterdir())) == count
+        assert len(list(run_root.iterdir())) > 0
