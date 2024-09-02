@@ -13,3 +13,7 @@ test.svg
 # Path Output + Markdown Input + PNG
 
 test.png
+
+# Raw Input + Missing documentclass
+
+test2.pdf

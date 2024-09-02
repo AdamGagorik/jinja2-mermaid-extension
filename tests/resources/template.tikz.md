@@ -44,3 +44,13 @@ ext: .png
 name: test
 mode: path
 {% endtikz %}
+
+# Raw Input + Missing documentclass
+
+{% tikz -%}
+ext: .pdf
+name: test2
+mode: path
+diagram: |
+    \node[draw, fill=yellow] at (0,0) {\textcolor{blue}{Hello, world!}};
+{% endtikz %}

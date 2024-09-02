@@ -66,7 +66,7 @@ diagram: |
 The output will be replaced with a `MyST` formatted markdown image.
 
 ```markdown
-:::{figure} ./test.png
+:::{figure} test.png
 :align: center
 :witdh: 75
 
@@ -143,13 +143,17 @@ diagram: |
 
 The following tikz specific arguments are available:
 
-| Argument                    | Kind        | Description                                        | Default                         |
-| --------------------------- | ----------- | -------------------------------------------------- | ------------------------------- |
-| **allow_missing**           | TikZ Option | Allow commands to be missing?                      | `False`                         |
-| **latex_command**           | TikZ Option | The command to use to compile tikz diagrams.       | `"tectonic {inp_tex}"`          |
-| **pdf2svg_command**         | TikZ Option | The command to use to convert pdf to svg diagrams. | `"pdf2svg {inp_pdf} {out_svg}"` |
-| **convert_command**         | TikZ Option | The command to use to convert pdf to png diagrams. | `"convert {inp_pdf} {out_png}"` |
-| **convert_command_density** | TikZ Option | The density of the png diagram.                    | `300`                           |
+| Argument                    | Kind        | Description                                        | Default                                |
+| --------------------------- | ----------- | -------------------------------------------------- | -------------------------------------- |
+| **allow_missing**           | TikZ Option | Allow commands to be missing?                      | `False`                                |
+| **latex_command**           | TikZ Option | The command to use to compile tikz diagrams.       | `"tectonic {inp_tex}"`                 |
+| **pdf2svg_command**         | TikZ Option | The command to use to convert pdf to svg diagrams. | `"pdf2svg {inp_pdf} {out_svg}"`        |
+| **convert_command**         | TikZ Option | The command to use to convert pdf to png diagrams. | `"magick convert {inp_pdf} {out_png}"` |
+| **convert_command_density** | TikZ Option | The density of the png diagram.                    | `300`                                  |
+| **package**                 | TikZ Option | The LaTeX package to use for the diagram.          | `(xcolor, tikz)`                       |
+| **preable**                 | TikZ Option | The LaTeX preable to use for the diagram.          | ``                                     |
+| **libraries**               | TikZ Option | The TikZ libraries to use for the diagram.         | `(shapes, arrows, etc)`                |
+| **tikz_options**            | TikZ Option | The TikZ picture options to use for the diagram.   | `(scale=1, remember picture)`          |
 
 ---
 

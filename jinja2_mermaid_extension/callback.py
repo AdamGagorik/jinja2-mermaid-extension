@@ -7,12 +7,26 @@ import os
 import shutil
 from collections.abc import Generator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, ClassVar
 
+from jinja2 import Environment, PackageLoader
+
+from jinja2_mermaid_extension.logger import logger
 from jinja2_mermaid_extension.run import run
+
+
+@functools.lru_cache(maxsize=1)
+def env() -> Environment:
+    """
+    Get the Jinja2 environment.
+
+    Returns:
+        Environment: The Jinja2 environment.
+    """
+    return Environment(loader=PackageLoader("jinja2_mermaid_extension", "templates"))  # noqa: S701
 
 
 @functools.lru_cache
@@ -74,6 +88,17 @@ class TikZOptions(Options):
     #: The DPI to use for the PNG output.
     convert_command_density: int = 300
 
+    # The following options are used when the input does not explicitly configure the documentclass.
+
+    #: The LaTeX packages to include.
+    packages: tuple[str, ...] = ("xcolor", "tikz")
+    #: The LaTeX preamble to include.
+    preamble: str = ""
+    #: The tikz libraries to include.
+    libraries: tuple[str, ...] = ("shapes", "arrows", "decorations", "positioning", "patterns", "calc")
+    #: The tikz picture options to use.
+    tikz_options: tuple[str, ...] = ("scale=1", "remember picture")
+
 
 @dataclass
 class MermaidOptions(Options):
@@ -131,6 +156,19 @@ class RunCommandInTempDir:
     #: The valid extensions for output files.
     VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset(())
 
+    @staticmethod
+    def preprocess(inp: str, **kwargs: Any) -> str:
+        """
+        Preprocess the input string.
+
+        Args:
+            inp: The input string.
+
+        Returns:
+            str: The preprocessed input string.
+        """
+        return inp
+
     def command(self, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Generator[str, None, None]:
         """
         Generate the command to run.
@@ -185,13 +223,14 @@ class RunCommandInTempDir:
             if isinstance(inp, str):
                 tmp_inp = tmp_root / out.with_suffix(self.RAW_INPUT_EXT).name
                 with tmp_inp.open("w") as stream:
-                    stream.write(inp)
+                    stream.write(self.preprocess(inp))
             else:
                 if not inp.exists():
                     raise FileNotFoundError(f"input file does not exist!: {inp}")
 
                 tmp_inp = tmp_root / inp.name
-                shutil.copy(inp, tmp_inp)
+                with tmp_inp.open("w") as stream:
+                    stream.write(self.preprocess(inp.read_text()))
 
             if not out.parent.exists():
                 raise FileNotFoundError(f"output directory does not exist!: {out.parent}")
@@ -225,6 +264,26 @@ class TikZCallback(RunCommandInTempDir):
     #: The valid extensions for output files.
     VALID_OUT_EXT: ClassVar[frozenset[str]] = frozenset((".pdf", ".svg", ".png"))
 
+    @staticmethod
+    def preprocess(inp: str, **kwargs: Any) -> str:
+        """
+        Preprocess the input string.
+
+        Args:
+            inp: The input string.
+
+        Returns:
+            str: The preprocessed input string.
+        """
+        opts = TikZOptions(**kwargs)
+
+        if "documentclass" not in inp:
+            rendered = env().get_template("tikz.tex").render(**asdict(opts), inp=inp.rstrip())
+            logger.debug("\n%s", rendered)
+            return rendered
+
+        return inp
+
     def command(self, *, tmp_inp: Path, tmp_out: Path, tmp_root: Path, **kwargs: Any) -> Generator[str, None, None]:
         """
         Generate the command to run.
@@ -245,7 +304,7 @@ class TikZCallback(RunCommandInTempDir):
                 yield "echo"
                 yield "Skipping tectonic command because it is not found."
 
-            raise FileNotFoundError("tectonic command not found")
+            raise FileNotFoundError(opts.latex_command[0])
 
         for command in opts.latex_command:
             yield command.format(inp_tex=tmp_inp)

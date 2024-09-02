@@ -37,7 +37,7 @@ def test_project(resource_root: Path, template_name: str, expected_name: str, ru
         m.setattr(os, "environ", environ)
 
         for path in run_root.iterdir():
-            if path.suffix in {".png", ".svg"}:
+            if path.suffix in {".pdf", ".png", ".svg"}:
                 path.unlink()
 
         assert not any(run_root.iterdir())

@@ -1,0 +1,13 @@
+\documentclass[margin=0pt]{standalone}
+{%- for package in packages %}
+\usepackage{{ '{' }}{{ package }}{{ '}' }}
+{%- endfor %}
+{%- for library in libraries %}
+\usetikzlibrary{{ '{' }}{{ library }}{{ '}' }}
+{%- endfor %}
+{{ preamble }}
+\begin{document}
+\begin{tikzpicture}[{{ ', '.join(tikz_options) }}]
+{{ inp }}
+\end{tikzpicture}
+\end{document}
