@@ -381,6 +381,8 @@ class MermaidCallback(RunCommandInTempDir):
             yield "docker"
             yield "run"
             yield "--rm"
+            yield "-u"
+            yield f"{os.getuid()}"
             yield "-v"
             yield f"{tmp_root}:{opts.mermaid_volume_mount}"
             yield opts.mermaid_docker_image
